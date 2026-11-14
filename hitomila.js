@@ -28,15 +28,22 @@ function scan(){[].slice.call(document.images).forEach(function(img){if(img.src&
 function refreshMenu(){box.innerHTML='';seen.length=0;try{[].slice.call(document.images).forEach(function(img){img.loading='eager';});}catch(e){}scan();}
 function waitForNew(prev){
 if(window.__galleryWait){clearTimeout(window.__galleryWait);window.__galleryWait=null;}
+if(window.__gallerySafety){clearTimeout(window.__gallerySafety);window.__gallerySafety=null;}
 window.__galleryStopped=false;
+window.__gallerySafety=setTimeout(function(){if(!window.__galleryStopped){refreshMenu();}},1500);
 (function check(){
 if(window.__galleryStopped)return;
 var found=0;
 [].slice.call(document.images).forEach(function(img){
+try{img.loading='eager';}catch(e){}
 var u=img.currentSrc||img.src;
 if(u&&img.naturalWidth>0&&prev.indexOf(u)===-1)found++;
 });
-if(found>=3){refreshMenu();return;}
+if(found>=3){
+if(window.__gallerySafety){clearTimeout(window.__gallerySafety);window.__gallerySafety=null;}
+refreshMenu();
+return;
+}
 window.__galleryWait=setTimeout(check,400);
 })();
 }
@@ -49,7 +56,7 @@ var inp=document.createElement('input');inp.type='number';inp.step='1';inp.place
 btns.appendChild(inp);
 btns.appendChild(mk('Go','#00838f',function(){var v=parseInt(inp.value,10);if(isNaN(v))return;jump(v);}));
 btns.appendChild(mk('Refresh','#1565c0',function(){refreshMenu();}));
-btns.appendChild(mk('Remove','#c62828',function(){window.__galleryStopped=true;if(window.__galleryWait){clearTimeout(window.__galleryWait);window.__galleryWait=null;}box.remove();head.remove();sel.remove();document.removeEventListener('click',b,true);document.removeEventListener('auxclick',b,true);document.removeEventListener('pointerdown',b,true);try{document.removeEventListener('touchstart',b,{capture:true,passive:false});}catch(e){document.removeEventListener('touchstart',b,true);}window.open=oo;window.__galleryInit=false;if(window.__galleryObserver){window.__galleryObserver.disconnect();window.__galleryObserver=null;}if(window.__adObserver){window.__adObserver.disconnect();window.__adObserver=null;}}));
+btns.appendChild(mk('Remove','#c62828',function(){window.__galleryStopped=true;if(window.__galleryWait){clearTimeout(window.__galleryWait);window.__galleryWait=null;}if(window.__gallerySafety){clearTimeout(window.__gallerySafety);window.__gallerySafety=null;}box.remove();head.remove();sel.remove();document.removeEventListener('click',b,true);document.removeEventListener('auxclick',b,true);document.removeEventListener('pointerdown',b,true);try{document.removeEventListener('touchstart',b,{capture:true,passive:false});}catch(e){document.removeEventListener('touchstart',b,true);}window.open=oo;window.__galleryInit=false;if(window.__galleryObserver){window.__galleryObserver.disconnect();window.__galleryObserver=null;}if(window.__adObserver){window.__adObserver.disconnect();window.__adObserver=null;}}));
 head.appendChild(btns);
 scan();
 document.body.appendChild(head);
