@@ -17,9 +17,11 @@ var oo=window.open;window.open=function(){return null};
 document.addEventListener('submit',function(e){var f=e.target;if(f&&(f.getAttribute('target')||'')!=='_self'){e.preventDefault();e.stopPropagation();}},true);
 function mk(t,bg,f){var x=document.createElement('button');x.textContent=t;x.style.cssText='padding:10px 14px;border:none;border-radius:6px;color:#fff;background:'+bg+';margin:4px;font-size:14px;';x.onclick=f;return x;}
 function curPage(){var m=location.hash.match(/#(\d+)/);return m?parseInt(m[1],10):1;}
-function goTo(p){location.hash='#'+p;location.reload();}
-function step(d){var c=curPage();var n=c+d;if(n<1)n=1;goTo(n);}
-function jump(target){var cur=curPage();var dir=target>=cur?1:-1;var steps=Math.ceil(Math.abs(target-cur)/3);var last=cur+dir*steps*3;if(dir>0&&last<target)last+=3;if(dir<0&&last>target)last-=3;goTo(last);}
+function goHash(p){var h='#'+p;if(location.hash===h){location.hash=h+'-'+Date.now();setTimeout(function(){location.hash=h;try{window.dispatchEvent(new HashChangeEvent('hashchange'));}catch(e){}},0);}else{location.hash=h;try{window.dispatchEvent(new HashChangeEvent('hashchange'));}catch(e){}}}
+function vNext(){var sels=['a.next','button.next','.next','[data-next]','a[href*="next"]'];for(var i=0;i<sels.length;i++){var el=document.querySelector(sels[i]);if(el){try{el.click();return true;}catch(e){}}}return false;}
+function vPrev(){var sels=['a.prev','button.prev','.prev','[data-prev]','a[href*="prev"]'];for(var i=0;i<sels.length;i++){var el=document.querySelector(sels[i]);if(el){try{el.click();return true;}catch(e){}}}return false;}
+function step(d){var c=curPage();var n=c+d;if(n<1)n=1;if(d>0){if(!vNext())goHash(n);}else{if(!vPrev())goHash(n);}}
+function jump(target){var cur=curPage();var dir=target>=cur?1:-1;var diff=Math.abs(target-cur);var steps=Math.ceil(diff/3);if(diff%3!==0)steps+=1;var i=0;function next(){if(i>=steps)return;i++;if(dir>0){if(!vNext())goHash(curPage()+3);}else{if(!vPrev())goHash(curPage()-3);}setTimeout(next,400);}next();}
 var seen=[];
 var head=document.createElement('div');head.style.cssText='background:#111;color:#fff;font:bold 16px sans-serif;padding:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;';
 head.appendChild(document.createTextNode('Images'));
