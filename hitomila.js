@@ -25,7 +25,7 @@ var box=document.createElement('div');box.style.cssText='background:#111;padding
 var sel=document.createElement('div');sel.style.cssText='background:#000;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:sans-serif;width:100%;box-sizing:border-box;';
 function add(src){if(seen.indexOf(src)!==-1)return;seen.push(src);var t=document.createElement('img');t.src=src;t.loading='lazy';t.style.cssText='width:100%;height:110px;object-fit:cover;cursor:pointer;border:1px solid #333;border-radius:6px;display:block;';t.onclick=function(){show(src)};box.appendChild(t);}
 function scan(){[].slice.call(document.images).forEach(function(img){if(img.src&&img.naturalWidth>0)add(img.currentSrc||img.src);});}
-function refreshMenu(){box.innerHTML='';seen.length=0;try{[].slice.call(document.images).forEach(function(img){img.loading='eager';});}catch(e){}scan();}
+function refreshMenu(){try{[].slice.call(document.images).forEach(function(img){img.loading='eager';});}catch(e){}scan();}
 function menuURLs(){return [].slice.call(box.children).map(function(el){var i=el.querySelector('img');return i?i.src:'';});}
 function waitMenuNew(prevURLs){
 if(window.__galleryWait){clearTimeout(window.__galleryWait);window.__galleryWait=null;}
