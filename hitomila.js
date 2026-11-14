@@ -1,4 +1,28 @@
 (function(){try{if(window.__galleryInit){return;}window.__galleryInit=true;
+var BLOCK=['displayvertising.com','popads.net','propellerads.com','adsterra.com','juicyads.com','onclickads.net','revcontent.com','mgid.com','taboola.com','outbrain.com','doubleclick.net','googlesyndication.com','adservice.google.com'];
+var re=new RegExp('('+BLOCK.map(function(d){return d.replace(/\./g,'\\.')}).join('|')+')','i');
+function clean(){
+document.querySelectorAll('script[src],iframe[src],a[href],img[src],link[href]').forEach(function(n){
+var u=n.src||n.href||'';
+if(u&&re.test(u))n.remove();
+});
+}
+clean();
+if(!window.__adObserver){
+window.__adObserver=new MutationObserver(function(muts){
+muts.forEach(function(m){
+m.addedNodes.forEach(function(n){
+if(n.nodeType===1){
+try{
+if(re.test(n.src||n.href||'')){n.remove();return;}
+if(n.querySelectorAll){n.querySelectorAll('script[src],iframe[src],a[href],img[src],link[href]').forEach(function(x){if(re.test(x.src||x.href||''))x.remove();});}
+}catch(e){}
+}
+});
+});
+});
+window.__adObserver.observe(document.documentElement,{childList:true,subtree:true});
+}
 var so=function(u){try{return new URL(u,location.href).origin===location.origin}catch(e){return false}};
 var fl=function(e){while(e&&e!==document){if(e.tagName==='A')return e;e=e.parentNode}return null};
 var b=function(e){var a=fl(e.target);if(!a)return;var h=a.getAttribute('href')||'';var tg=a.getAttribute('target')||'';if(tg&&tg!=='_self'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();return;}if(!h||h[0]==='#'||h.indexOf('javascript:')===0||so(h))return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()};
@@ -24,6 +48,7 @@ document.removeEventListener('pointerdown',b,true);
 document.removeEventListener('touchstart',b,{capture:true,passive:false});
 window.open=oo;window.__galleryInit=false;
 if(window.__galleryObserver){window.__galleryObserver.disconnect();window.__galleryObserver=null;}
+if(window.__adObserver){window.__adObserver.disconnect();window.__adObserver=null;}
 }));
 head.appendChild(btns);
 var box=document.createElement('div');box.style.cssText='background:#111;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;font-family:sans-serif;width:100%;box-sizing:border-box;';
