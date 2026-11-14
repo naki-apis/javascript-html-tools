@@ -43,7 +43,7 @@ btns.appendChild(mk('Refresh','#1565c0',function(){refreshMenu();}));
 var selBtn=mk('Select','#ef6c00',function(){selectMode=!selectMode;if(!selectMode){selected={};box.querySelectorAll('img').forEach(function(i){i.style.outline='none';i._cb.style.display='none';});}else{box.querySelectorAll('img').forEach(function(i){i._cb.style.display='flex';});}toggleBtn.style.display=selectMode?'inline-block':'none';delBtn.style.display=selectMode?'inline-block':'none';downBtn.style.display=selectMode?'inline-block':'none';selBtn.textContent=selectMode?'Cancel':'Select';});
 var toggleBtn=mk('All','#00838f',function(){var imgs=[].slice.call(box.querySelectorAll('img'));var all=imgs.every(function(i){return selected[i.src];});imgs.forEach(function(i){selected[i.src]=!all;i.style.outline=!all?'3px solid #2e7d32':'none';i._cb.style.background=!all?'#2e7d32':'rgba(0,0,0,.6)';});toggleBtn.textContent=all?'None':'All';});
 var delBtn=mk('Delete','#c62828',function(){var imgs=[].slice.call(box.querySelectorAll('img'));imgs.forEach(function(i){if(selected[i.src]){deleted[i.src]=true;i.parentNode.remove();}});selected={};toggleBtn.textContent='All';});
-var downBtn=mk('Download','#2e7d32',function(){var imgs=[].slice.call(box.querySelectorAll('img'));var list=imgs.filter(function(i){return selected[i.src];});if(!list.length){alert('No selection');return;}var idx=0;function next(){if(idx>=list.length)return;var src=list[idx].src;idx++;var ok=showOne(src,true);if(!ok){setTimeout(next,800);return;}var tries=0;(function check(){if(window.__galleryShot){var a=document.createElement('a');a.href=window.__galleryShot.toDataURL('image/png');a.download=pname();document.body.appendChild(a);a.click();a.remove();window.__galleryShot=null;setTimeout(next,800);return;}tries++;if(tries>30){setTimeout(next,800);return;}setTimeout(check,500);})();}next();});
+var downBtn=mk('Download','#2e7d32',function(){var imgs=[].slice.call(box.querySelectorAll('img'));var list=imgs.filter(function(i){return selected[i.src];});if(!list.length){alert('No selection');return;}var idx=0;function next(){if(idx>=list.length)return;var src=list[idx].src;idx++;showOne(src,true);var tries=0;(function check(){if(window.__galleryShot){var canvas=window.__galleryShot;canvas.toBlob(function(blob){if(blob){var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=pname();document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(url);},1500);}window.__galleryShot=null;setTimeout(next,800);},'image/png');return;}tries++;if(tries>30){setTimeout(next,800);return;}setTimeout(check,500);})();}next();});
 var hideBtn=mk('Hide','#455a64',function(){var hidden=box.style.display==='none';box.style.display=hidden?'grid':'none';hideBtn.textContent=hidden?'Hide':'Show';});
 toggleBtn.style.display='none';delBtn.style.display='none';downBtn.style.display='none';
 btns.appendChild(selBtn);btns.appendChild(toggleBtn);btns.appendChild(delBtn);btns.appendChild(downBtn);btns.appendChild(hideBtn);
@@ -56,7 +56,6 @@ document.body.appendChild(sel);
 function loadH2C(cb){if(window.html2canvas){cb();return;}var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=cb;s.onerror=function(){alert('No se pudo cargar html2canvas (CSP?)');};document.head.appendChild(s);}
 function showOne(src,keep){
 window.__galleryShot=null;
-var origHTML=keep?null:document.body.innerHTML;
 var app=document.createElement('div');
 app.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;box-sizing:border-box;overflow:auto;';
 var holder=document.createElement('div');
@@ -71,17 +70,43 @@ hint.style.cssText='color:#aaa;font-size:12px;text-align:center;max-width:90vw;'
 var bar=document.createElement('div');
 bar.style.cssText='display:flex;gap:8px;flex-wrap:wrap;justify-content:center;';
 var shot=null;
-var finish=function(){var w=im.naturalWidth,h=im.naturalHeight;im.style.width=w+'px';im.style.height=h+'px';holder.style.width=w+'px';holder.style.height=h+'px';loadH2C(function(){html2canvas(im,{useCORS:true,allowTaint:false,backgroundColor:'#000000',scale:1,width:w,height:h,logging:false}).then(function(c){shot=c;window.__galleryShot=c;hint.textContent='Ready: '+c.width+'x'+c.height+' px';}).catch(function(e){hint.textContent='CORS real: no se puede leer el pixel. Usa pulsación larga sobre la imagen.';});});};
+var finish=function(){
+var w=im.naturalWidth,h=im.naturalHeight;
+if(!w||!h){hint.textContent='Image not loaded';return;}
+im.style.width=w+'px';im.style.height=h+'px';
+holder.style.width=w+'px';holder.style.height=h+'px';
+loadH2C(function(){
+html2canvas(im,{useCORS:true,allowTaint:false,backgroundColor:'#000000',scale:1,width:w,height:h,logging:false}).then(function(c){
+shot=c;window.__galleryShot=c;
+hint.textContent='Ready: '+c.width+'x'+c.height+' px';
+}).catch(function(e){
+hint.textContent='CORS: cannot capture';
+});
+});
+};
 holder.appendChild(im);
 document.body.appendChild(holder);
-if(im.complete&&im.naturalWidth>0){finish();}else{im.onload=finish;im.onerror=function(){hint.textContent='La imagen no cargó (403/referer/CORS).';};}
-bar.appendChild(mk('Download','#2e7d32',function(){if(!shot){hint.textContent='Aún no hay captura. Espera o pulsa de nuevo.';return;}var a=document.createElement('a');a.href=shot.toDataURL('image/png');a.download=pname();document.body.appendChild(a);a.click();a.remove();}));
-bar.appendChild(mk('Close','#c62828',function(){if(holder.parentNode)holder.parentNode.removeChild(holder);app.remove();if(origHTML!==null){document.body.innerHTML=origHTML;}}));
+if(im.complete&&im.naturalWidth>0){finish();}else{im.onload=finish;im.onerror=function(){hint.textContent='Image failed to load';};}
+bar.appendChild(mk('Download','#2e7d32',function(){
+if(!shot){hint.textContent='No capture yet. Wait for Ready.';return;}
+shot.toBlob(function(blob){
+if(!blob){hint.textContent='Blob failed';return;}
+var url=URL.createObjectURL(blob);
+var a=document.createElement('a');
+a.href=url;
+a.download=pname();
+document.body.appendChild(a);
+a.click();
+setTimeout(function(){a.remove();URL.revokeObjectURL(url);},1500);
+hint.textContent='Download triggered';
+},'image/png');
+}));
+bar.appendChild(mk('Close','#c62828',function(){
+if(holder.parentNode)holder.parentNode.removeChild(holder);
+app.remove();
+}));
 app.appendChild(pre);app.appendChild(hint);app.appendChild(bar);
-if(!keep){document.body.innerHTML='';}
 document.body.appendChild(app);
-if(!keep){document.body.appendChild(holder);}else{document.body.appendChild(holder);}
-return true;
 }
 if(!window.__galleryObserver){
 window.__galleryObserver=new MutationObserver(function(){
