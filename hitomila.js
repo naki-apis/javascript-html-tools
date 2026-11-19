@@ -149,4 +149,4 @@ if(!document.body.contains(head)){document.body.appendChild(head);document.body.
 });
 window.__galleryObserver.observe(document.body,{childList:true,subtree:false});
 }
-}catch(e){}})();
+}catch(e){alert('[gallery] ERROR: '+(e&&e.message?e.message:e));}})();
